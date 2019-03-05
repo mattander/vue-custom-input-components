@@ -17,6 +17,7 @@ Standard features are:
 - v-model to a value in the parent
 - Emitting their own errors
 - Smart enough to not throw errors for untouched fields and other edge cases
+- Use a unique id, passed with the inputId prop as a string.
 
 Special features are:
 - Text and number both support min/max using the "validation" prop and passing your validation options following this format in an array of objects:
