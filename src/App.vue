@@ -104,12 +104,12 @@
                 />
             </div>
             <div class="form-row">
-                <CustomTypeahead
-                    inputId="testTypeahead2"
+                <TypeaheadInput
+                    inputId="testTypeahead"
                     labelText="Typeahead"
                     :options="testTypeaheadOptions"
                     :wrapperClasses="['col-md-6']"
-                    v-model="formData.testTypeahead2"
+                    v-model="formData.testTypeahead"
                     @error="catchError"
                     @clean="clean"
                     :submitted="submitted"
@@ -132,7 +132,7 @@ import DateTimeInput from "@/components/DateTimeInput.vue";
 import SelectInput from "@/components/SelectInput.vue";
 import TextAreaInput from "@/components/TextAreaInput.vue";
 import RadioInput from "@/components/RadioInput.vue";
-import CustomTypeahead from "@/components/CustomTypeahead.vue";
+import TypeaheadInput from "@/components/TypeaheadInput.vue";
 
 export default {
     name: "app",
@@ -144,7 +144,7 @@ export default {
         SelectInput,
         TextAreaInput,
         RadioInput,
-        CustomTypeahead
+        TypeaheadInput
     },
     data() {
         return {
@@ -158,8 +158,7 @@ export default {
                 testSelect: "",
                 testTextArea: "",
                 testRadio: "",
-                testTypeahead: "",
-                testTypeahead2: ""
+                testTypeahead: ""
             },
             errors: [],
             submitted: false,
