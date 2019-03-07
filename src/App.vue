@@ -103,6 +103,30 @@
                     @clean="clean"
                 />
             </div>
+            <div class="form-row">
+                <TypeaheadInput
+                    inputId="testTypeahead"
+                    labelText="Typeahead"
+                    :options="testTypeaheadList"
+                    v-model="formData.testTypeahead"
+                    @error="catchError"
+                    @clean="clean"
+                    :submitted="submitted"
+                />
+            </div>
+            <div class="form-row">
+                <CustomTypeahead
+                    inputId="testTypeahead2"
+                    labelText="Typeahead"
+                    :options="testTypeaheadOptions"
+                    :wrapperClasses="['col-md-6']"
+                    v-model="formData.testTypeahead2"
+                    @input="catchE"
+                    @error="catchError"
+                    @clean="clean"
+                    :submitted="submitted"
+                />
+            </div>
         </form>
         <div
             class="alert alert-danger"
@@ -120,6 +144,8 @@ import DateTimeInput from "@/components/DateTimeInput.vue";
 import SelectInput from "@/components/SelectInput.vue";
 import TextAreaInput from "@/components/TextAreaInput.vue";
 import RadioInput from "@/components/RadioInput.vue";
+import TypeaheadInput from "@/components/TypeaheadInput.vue";
+import CustomTypeahead from "@/components/CustomTypeahead.vue";
 
 export default {
     name: "app",
@@ -130,7 +156,9 @@ export default {
         DateTimeInput,
         SelectInput,
         TextAreaInput,
-        RadioInput
+        RadioInput,
+        TypeaheadInput,
+        CustomTypeahead
     },
     data() {
         return {
@@ -143,7 +171,9 @@ export default {
                 testDateTime: "",
                 testSelect: "",
                 testTextArea: "",
-                testRadio: ""
+                testRadio: "",
+                testTypeahead: "",
+                testTypeahead2: ""
             },
             errors: [],
             submitted: false,
@@ -156,6 +186,53 @@ export default {
             testRadios: [
                 { value: "yes", labelText: "Yes" },
                 { value: "no", labelText: "No" }
+            ],
+            testTypeaheadOptions: [
+                {
+                    name: "Test 1",
+                    location: "test 1 location",
+                    description: "test 1 description"
+                },
+                {
+                    name: "Test 2 a",
+                    location: "test 2 location",
+                    description: "test 2 description"
+                },
+                {
+                    name: "Test 3",
+                    location: "test 3 location",
+                    description: "test 3 description"
+                },
+                {
+                    name: "Test 4 a",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                },
+                {
+                    name: "Test B",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                },
+                {
+                    name: "Test C",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                },
+                {
+                    name: "Test D",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                },
+                {
+                    name: "Test E",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                },
+                {
+                    name: "Test F",
+                    location: "test 4 location",
+                    description: "test 4 description"
+                }
             ]
         };
     },
@@ -167,6 +244,14 @@ export default {
             });
             const error = errors.length > 0 ? true : false;
             return error;
+        },
+        testTypeaheadList() {
+            return this.testTypeaheadOptions.map(item => item.name);
+        },
+        testTypeaheadSelectedOption() {
+            return this.testTypeaheadOptions.filter(item => {
+                return item.name == this.formData.testTypeahead;
+            })[0];
         }
     },
     methods: {
@@ -192,6 +277,9 @@ export default {
             if (!this.error) {
                 alert("success!");
             }
+        },
+        catchE(e) {
+            console.log(e);
         }
     }
 };

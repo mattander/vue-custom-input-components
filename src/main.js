@@ -5,7 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import jQuery from 'jquery'
 import '@fortawesome/fontawesome-free/css/all.css'
 import '@fortawesome/fontawesome-free/css/v4-shims.min.css'
-
 Vue.config.productionTip = false
 
 new Vue({
