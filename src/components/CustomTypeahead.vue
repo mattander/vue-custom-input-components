@@ -21,6 +21,7 @@
       @input="isClean = false; $emit('input', $event.target.value);"
       @focus="isFocused = true"
       @blur="isFocused = false"
+      autocomplete="off"
     >
     <div
       class="typeahead-options"
@@ -34,11 +35,12 @@
         class="typeahead-options--item"
         v-for="(option,index) in options"
         :key="index"
-        v-show="value.length > 0 && option.name.toLowerCase().indexOf(value.toLowerCase()) != -1 && index < 5"
+        v-show="value.length > 0 && option.name.toLowerCase().indexOf(value.toLowerCase()) != -1"
         @mousedown.prevent
         @click="handleClick(option.name)"
         @focus="isFocused = true"
-      >{{option.name}}</div>
+        v-html="boldMatch(option.name, value)"
+      ></div>
     </div>
     <div
       class="invalid-feedback"
@@ -99,6 +101,9 @@ export default {
       this.$emit("input", option);
       this.isHit = true;
       this.isFocused = false;
+    },
+    boldMatch(string, query) {
+      return string.replace(query, "<strong>" + query + "</strong>");
     }
   },
   data() {
