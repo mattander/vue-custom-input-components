@@ -107,9 +107,10 @@
                 <TypeaheadInput
                     inputId="testTypeahead"
                     labelText="Typeahead"
-                    :options="testTypeaheadOptions"
+                    :options="testTypeaheadList"
                     :wrapperClasses="['col-md-6']"
                     v-model="formData.testTypeahead"
+                    @input="handleTypeaheadInput"
                     @error="catchError"
                     @clean="clean"
                     :submitted="submitted"
@@ -272,6 +273,15 @@ export default {
             if (!this.error) {
                 alert("success!");
             }
+        },
+        handleTypeaheadInput(e) {
+            this.formData = Object.assign(
+                {},
+                this.formData,
+                this.testTypeaheadOptions.filter(
+                    item => item.name == e
+                )[0]
+            );
         }
     }
 };

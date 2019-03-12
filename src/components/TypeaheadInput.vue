@@ -12,27 +12,36 @@
         </label>
         <input
             type="text"
-            class="form-control"
+            class="form-control typeahead-input"
             :id="inputId"
             :placeholder="placeholder"
             :value="value"
             :disabled="disabled"
             @input="isClean = false; $emit('input', $event.target.value);"
             @focus="isFocused = true"
-            @blur="isFocused = false"
+            @keydown.down.prevent="optionChange('down')"
+            @keydown.esc="removeFocus"
             autocomplete="off"
+            @blur="isFocused = false"
         >
-        <div class="typeahead-options" v-if="isFocused">
+        <div class="typeahead-options" tabindex="0" v-show="isFocused">
             <div class="typeahead-options--item" v-if="noMatch">No matching results found.</div>
             <div
                 class="typeahead-options--item"
-                v-for="(option,index) in options"
+                v-for="(match,index) in matches"
                 :key="index"
-                v-show="value.length > 0 && option.name.toLowerCase().indexOf(value.toLowerCase()) != -1"
+                :id="'typeaheadOption'+index"
+                v-show="value.length > 0 && matches.length > 0"
+                tabindex="0"
                 @mousedown.prevent
-                @click="handleClick(option.name)"
+                @blur="isFocused = false"
+                @click="handleClick(match)"
                 @focus="isFocused = true"
-                v-html="boldMatch(option.name, value)"
+                @keydown.enter="handleClick(match)"
+                @keydown.down.prevent="optionChange('down')"
+                @keydown.up.prevent="optionChange('up')"
+                @keydown.esc="removeFocus"
+                v-html="boldMatch(match, value  )"
             ></div>
         </div>
         <div class="invalid-feedback" v-if="errors.length > 0 && (!isClean || submitted)">
@@ -45,6 +54,14 @@
 <script>
 export default {
     name: "typeaheadInput",
+    data() {
+        return {
+            isClean: true,
+            isHit: false,
+            isFocused: false,
+            selectedIndex: -1
+        };
+    },
     props: {
         wrapperClasses: {
             type: Array,
@@ -81,6 +98,47 @@ export default {
         options: Array
     },
     methods: {
+        removeFocus() {
+            this.isFocused = false;
+            document.getElementsByTagName("body")[0].focus();
+        },
+        optionChange(dir) {
+            if (this.matches.length > 0) {
+                switch (dir) {
+                    case "up":
+                        if (this.selectedIndex > 0) {
+                            this.selectedIndex--;
+                            document
+                                .getElementById(
+                                    "typeaheadOption" + this.selectedIndex
+                                )
+                                .focus();
+                        } else if (this.selectedIndex == 0) {
+                            this.selectedIndex = -1;
+                            document.getElementById(this.inputId).focus();
+                        } else {
+                            return null;
+                        }
+                        break;
+
+                    case "down":
+                        if (this.selectedIndex + 1 < this.matches.length) {
+                            this.selectedIndex++;
+                            document
+                                .getElementById(
+                                    "typeaheadOption" + this.selectedIndex
+                                )
+                                .focus();
+                        } else {
+                            return null;
+                        }
+                        break;
+
+                    default:
+                        return null;
+                }
+            }
+        },
         handleClick(option) {
             this.$emit("input", option);
             this.isHit = true;
@@ -89,7 +147,7 @@ export default {
         boldMatch(string, query) {
             // Bold any matching character, regarldess of case, but maintain the case of the original char
             let newString = string;
-            if (query && string.match(new RegExp(query, "gi"))) {
+            if (query !== "" && string.match(new RegExp(query, "gi"))) {
                 // Only execute if we have matches and the query isn't empty
                 const matches = string.match(new RegExp(query, "gi"));
                 let currentIndex = 0;
@@ -109,16 +167,8 @@ export default {
                     newString = newString.join("");
                 });
             }
-
             return newString;
         }
-    },
-    data() {
-        return {
-            isClean: true,
-            isHit: false,
-            isFocused: false
-        };
     },
     mounted() {
         // on mount emit an error event to populate the error list and trigger errors for any values that are current required
@@ -137,10 +187,19 @@ export default {
         hit() {
             return this.isHit && this.value;
         },
+        matches() {
+            return this.options.filter(
+                option =>
+                    option.toLowerCase().indexOf(this.value.toLowerCase()) != -1
+            );
+        },
         noMatch() {
             return (
                 this.options.filter(item => {
-                    return item.name.indexOf(this.value) != -1;
+                    return (
+                        item.toLowerCase().indexOf(this.value.toLowerCase()) !=
+                        -1
+                    );
                 }).length == 0
             );
         },
@@ -213,6 +272,10 @@ export default {
     display: block !important;
 }
 
+.typeahead-input {
+    z-index: 999;
+}
+
 .typeahead-options {
     display: block;
     border-radius: 0 0 3.4px 3.4px;
@@ -221,6 +284,7 @@ export default {
     width: 98%;
     background-color: #fff;
     margin-bottom: 2rem;
+    z-index: 98;
 
     .typeahead-options--item {
         width: 100%;
@@ -228,7 +292,8 @@ export default {
         border-bottom: 1px solid #ced4da;
         cursor: pointer;
 
-        &:hover {
+        &:hover,
+        &:focus {
             background-color: #f4f4f4;
         }
 

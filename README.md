@@ -42,6 +42,9 @@ I definitely have bigger plans for these. Here's what I'd like to do:
 - Maybe dump the bootstrap side and make them barebones, that way you can theme them however you want. Not sure, because it's nice to have them work and look good out of the box and if you want to modify them, you can just go in and remove the classes/styles you don't want.
 - For text area, I want to implement a small character count that will also check to see if there's a max/min validation and change colour/behaviour accordingly. This would be fun and not too hard. 
 
+## Things to fix
+- Change typeahead input to accept an array of strings only for the options. Use a computed property on the parent component to convert your object to that and another computed to grab the matching object from your JSON, this is more flexible for now so that people can do their own logic in terms of what they pass to the input
+
 ## Included inputs
 - DateTime (uses vue-datetime-picker, fontawesome and bootstrap)
 - Text
