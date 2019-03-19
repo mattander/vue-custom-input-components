@@ -6,6 +6,10 @@ My first attempt at a fix was equally bad. I made a single component that could 
 
 Attempt three was the winner. I made a flexible component for each input type I needed. The components hold their own validation logic and validate themselves. They work with the v-model directive and emit their own errors. It's not perfect yet, I haven't had a lot of time to continue refining this into a standalone plugin, but these are super powerful for quickly making forms.
 
+## Test page
+
+You can try these out in Github pages: https://mattander.github.io/vue-custom-input-components/
+
 ## What do they do?
 Each input has it's own set of features alonside standard features.
 
@@ -40,7 +44,7 @@ I definitely have bigger plans for these. Here's what I'd like to do:
 - Try to make these into a vue plugin (no idea what that entails)
 - Write these as native web components so they can be used in other frameworks and applications
 - Maybe dump the bootstrap side and make them barebones, that way you can theme them however you want. Not sure, because it's nice to have them work and look good out of the box and if you want to modify them, you can just go in and remove the classes/styles you don't want.
-- For text area, I want to implement a small character count that will also check to see if there's a max/min validation and change colour/behaviour accordingly. This would be fun and not too hard. 
+- For text area, I want to implement a small character count that will also check to see if there's a max/min validation and change colour/behaviour accordingly. This would be fun and not too hard.
 
 ## Things to fix
 - Change typeahead input to accept an array of strings only for the options. Use a computed property on the parent component to convert your object to that and another computed to grab the matching object from your JSON, this is more flexible for now so that people can do their own logic in terms of what they pass to the input
@@ -68,4 +72,3 @@ npm run serve
 ```
 npm run build
 ```
-

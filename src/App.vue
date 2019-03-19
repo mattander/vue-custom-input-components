@@ -234,12 +234,7 @@ export default {
     },
     computed: {
         error() {
-            // are there trues in the error list
-            const errors = this.errors.filter(error => {
-                return error.hasError == true;
-            });
-            const error = errors.length > 0 ? true : false;
-            return error;
+            return this.errors.some(error => error.hasError);
         },
         testTypeaheadList() {
             return this.testTypeaheadOptions.map(item => item.name);
@@ -253,6 +248,7 @@ export default {
     methods: {
         catchError(e) {
             const match = this.errors.findIndex(error => error.id == e.id);
+
             if (match != -1) {
                 this.errors[match] = Object.assign(this.errors[match], {
                     hasError: e.error,
@@ -278,9 +274,7 @@ export default {
             this.formData = Object.assign(
                 {},
                 this.formData,
-                this.testTypeaheadOptions.filter(
-                    item => item.name == e
-                )[0]
+                this.testTypeaheadOptions.filter(item => item.name == e)[0]
             );
         }
     }
