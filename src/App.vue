@@ -57,17 +57,18 @@
                     @clean="clean"
                 />
             </div>
-            <div class="form-row">
-                <DateTimeInput
-                    :wrapperClasses="['col-auto']"
-                    inputId="testDateTime"
-                    labelText="Datetime"
-                    v-model="formData.testDateTime"
-                    @error="catchError"
-                    @clean="clean"
-                    :submitted="submitted"
-                />
-            </div>
+            <label>Date time</label>
+
+            <DateTimeInput
+                inputId="testDateTime"
+                labelText="Datetime"
+                v-model="formData.testDateTime"
+                @error="catchError"
+                @clean="clean"
+                :submitted="submitted"
+                :defaultTime="{hour:7,minute:0}"
+            />
+
             <div class="form-row">
                 <SelectInput
                     :wrapperClasses="['col-auto']"
@@ -129,7 +130,7 @@
 import TextInput from "@/components/TextInput.vue";
 import CheckboxInput from "@/components/CheckboxInput.vue";
 import NumberInput from "@/components/NumberInput.vue";
-import DateTimeInput from "@/components/DateTimeInput.vue";
+import DateTimeInput from "@/components/DateTimeInputTest.vue";
 import SelectInput from "@/components/SelectInput.vue";
 import TextAreaInput from "@/components/TextAreaInput.vue";
 import RadioInput from "@/components/RadioInput.vue";

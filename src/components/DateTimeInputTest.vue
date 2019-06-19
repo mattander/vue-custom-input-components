@@ -13,7 +13,7 @@
                 @mouseenter="pickerHover = true"
                 @mouseleave.self="pickerHover = false"
             >
-                <div :class="['calendar-wrapper']" v-popupcalc="inputId">
+                <div :class="['calendar-wrapper', popupTop ? 'picker-top' : 'picker-bottom']">
                     <div class="calendar-header">
                         <h4>Pick a date</h4>
                         <button @click.prevent="inputFocus = false" class="calendar-close">Close</button>
@@ -35,7 +35,7 @@
                                         v-for="n in 12"
                                         :key="'month-'+n"
                                         :value="n-1"
-                                    >{{dayjs().month(n-1).format('MMMM')}}</option>
+                                    >{{moment().month(n-1).format('MMMM')}}</option>
                                 </select>
                             </div>
                             <div class="form-group col-auto">
@@ -174,8 +174,8 @@
 </template>
 
 <script>
-import dayjs from "dayjs";
-import Calendar from "@/components/inputs/Calendar.js";
+import moment from "moment";
+import Calendar from "@/components/Calendar.js";
 
 export default {
     name: "dateTimeInput",
@@ -223,6 +223,9 @@ export default {
             default: false
         }
     },
+    // filters: {
+    // 	friendlyDateFormat: val => moment(val).format('MMMM')
+    // },
     data() {
         return {
             isClean: true,
@@ -234,35 +237,30 @@ export default {
                 year: ""
             },
             today: {
-                day: dayjs().date(),
-                month: dayjs().month(),
-                year: dayjs().year()
+                day: moment().date(),
+                month: moment().month(),
+                year: moment().year()
             },
             pickerHover: false
         };
     },
     computed: {
-        // popupTop() {
-        //     let enoughSpace = false;
-        //     if (this.inputFocus) {
-        //         enoughSpace =
-        //             document
-        //                 .querySelector(`#${this.inputId}`)
-        //                 .getBoundingClientRect().top > 398
-        //                 ? true
-        //                 : false;
-        //     }
-        //     return enoughSpace;
-        // },
+        popupTop() {
+            return document
+                .querySelector(`#${this.inputId}`)
+                .getBoundingClientRect().top > 400
+                ? true
+                : false;
+        },
         dateFields() {
             return {
                 date: this.value
-                    ? dayjs(this.value).format("MMMM D, YYYY")
+                    ? moment(this.value).format("MMMM D, YYYY")
                     : "",
-                hour: this.value ? dayjs(this.value).format("hh") : "",
-                minute: this.value ? dayjs(this.value).format("mm") : "",
+                hour: this.value ? moment(this.value).format("hh") : "",
+                minute: this.value ? moment(this.value).format("mm") : "",
                 timeOfDay: this.value
-                    ? dayjs(this.value).get("hour") < 12
+                    ? moment(this.value).get("hour") < 12
                         ? "AM"
                         : "PM"
                     : ""
@@ -270,32 +268,22 @@ export default {
         },
         datepicker() {
             let datepickerobj = {
-                daysInPickerMonth: dayjs(
-                    this.datepickerparams.dateObj
-                ).daysInMonth(),
-                weeksInPickerMonth:
-                    Math.floor(
-                        dayjs(this.datepickerparams.dateObj).daysInMonth() / 7
-                    ) + 1,
-                firstDayIndex: dayjs(
-                    new Date(
-                        this.datepickerparams.year,
-                        this.datepickerparams.month,
-                        1
-                    )
-                ).day()
+                daysInPickerMonth: null,
+                weeksInPickerMonth: null,
+                firstDayIndex: null
             };
 
-            // datepickerobj.daysInPickerMonth = dayjs(this.datepickerparams.dateObj).daysInMonth();
-            // datepickerobj.weeksInPickerMonth =
-            //     Math.floor(dayjs(this.datepickerparams.dateObj).daysInMonth() / 7) + 1;
-            // datepickerobj.firstDayIndex = dayjs(
-            //     new Date(
-            //         this.datepickerparams.year,
-            //         this.datepickerparams.month,
-            //         1
-            //     )
-            // ).day();
+            datepickerobj.daysInPickerMonth = moment([
+                this.datepickerparams.year,
+                this.datepickerparams.month
+            ]).daysInMonth();
+            datepickerobj.weeksInPickerMonth =
+                Math.floor(datepickerobj.daysInPickerMonth / 7) + 1;
+            datepickerobj.firstDayIndex = moment([
+                this.datepickerparams.year,
+                this.datepickerparams.month,
+                1
+            ]).day();
             return datepickerobj;
         },
         errors() {
@@ -330,11 +318,12 @@ export default {
                 .filter(({ type, value, msg }) => {
                     switch (type) {
                         case "before": {
-                            if (dayjs(this.value).isBefore(value)) return msg;
+                            if (moment(this.value).isBefore(value)) return msg;
                             break;
                         }
                         case "notInThePast": {
-                            if (dayjs(this.value).isBefore(dayjs())) return msg;
+                            if (moment(this.value).isBefore(moment()))
+                                return msg;
                             break;
                         }
                         default:
@@ -360,22 +349,21 @@ export default {
         }
     },
     methods: {
-        hidePicker() {
+        hidePicker(e) {
             this.pickerHover ? null : (this.inputFocus = false);
         },
         parseDate(val, type) {
             switch (type) {
                 case "date": {
-                    if (String(dayjs(val)) == "Invalid date") {
+                    if (String(moment(val)) == "Invalid date") {
                         this.invalidDate = true;
                         break;
                     }
 
-                    if (String(dayjs(val)) !== "Invalid date") {
-                        console.log("value: ", this.value, "val: ", val);
+                    if (String(moment(val)) !== "Invalid date") {
                         const currentDate = this.value
-                            ? dayjs(this.value)
-                            : dayjs(val, [
+                            ? moment(this.value)
+                            : moment(val, [
                                   "MM DD YY",
                                   "MM DD YYYY",
                                   "MM DD",
@@ -388,7 +376,7 @@ export default {
 
                         this.$emit(
                             "input",
-                            dayjs(val, [
+                            moment(val, [
                                 "MM DD YY",
                                 "MM DD YYYY",
                                 "MM DD",
@@ -418,32 +406,17 @@ export default {
                     if (val == 12 && this.dateFields.timeOfDay == "PM")
                         hour = 12;
 
-                    console.log(
-                        "time ",
-                        dayjs(this.value)
-                            .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
                     this.$emit(
                         "input",
-                        dayjs(this.value)
+                        moment(this.value)
                             .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
+                            .format("YYYY-MM-DD hh:mm:ss")
                     );
                     break;
                 }
                 case "minute": {
-                    console.log(
-                        "time minute ",
-                        dayjs(this.value)
-                            .minute(val)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
-                    this.$emit(
-                        "input",
-                        dayjs(this.value)
-                            .minute(val)
-                            .format("YYYY-MM-DD HH:mm:ss")
+                    this.$emit("input", moment(this.value).minute(val)).format(
+                        "YYYY-MM-DD hh:mm:ss"
                     );
                     break;
                 }
@@ -455,18 +428,8 @@ export default {
                     if (val == "AM" && currentHour == 12) hour = 0;
                     if (val == "PM" && currentHour == 12) hour = 12;
 
-                    console.log(
-                        "timeofday ",
-                        dayjs(this.value)
-                            .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
-
-                    this.$emit(
-                        "input",
-                        dayjs(this.value)
-                            .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
+                    this.$emit("input", moment(this.value).hour(hour)).format(
+                        "YYYY-MM-DD hh:mm:ss"
                     );
                     break;
                 }
@@ -478,17 +441,13 @@ export default {
     },
     mounted() {
         // set the picker info to either the values in the field or, if it's empty, the values of today
-        let values = {
-            selectedDay: this.value ? dayjs(this.value).date() : dayjs().date(),
-            month: this.value ? dayjs(this.value).month() : dayjs().month(),
-            year: this.value ? dayjs(this.value).year() : dayjs().year()
+        const values = {
+            selectedDay: this.value
+                ? moment(this.value).date()
+                : moment().date(),
+            month: this.value ? moment(this.value).month() : moment().month(),
+            year: this.value ? moment(this.value).year() : moment().year()
         };
-
-        values.dateObj = new Date(
-            values.year,
-            values.month,
-            values.selectedDay
-        );
 
         this.datepickerparams = values;
         // on mount emit an input event to populate the error list and trigger errors for any values that are current required
@@ -520,17 +479,16 @@ export default {
     position: absolute;
     height: 0;
     width: 0;
-    z-index: 990;
 }
 
 .calendar-wrapper {
     background-color: #fff;
-    z-index: 999;
+    z-index: 10;
     width: 300px;
+    height: 400px;
     display: block;
     border: 1px solid black;
     border-radius: 3.5px;
-    position: relative;
 
     .calendar-header {
         display: flex;
@@ -554,6 +512,9 @@ export default {
     }
 
     &.picker-top {
+        position: relative;
+        top: -415px;
+
         &:before {
             border-left: 15px solid white;
             border-right: 15px solid white;
@@ -572,6 +533,9 @@ export default {
     }
 
     &.picker-bottom {
+        position: relative;
+        top: 55px;
+
         &:before {
             border-left: 15px solid white;
             border-right: 15px solid white;
@@ -658,12 +622,7 @@ export default {
             font-weight: bold;
         }
 
-        &.past {
-            cursor: default !important;
-
-            .past {
-                color: #a5a5a5 !important;
-            }
+        .past.disabled {
         }
     }
 }

@@ -12,25 +12,27 @@
         </label>
         <input
             type="text"
-            class="form-control typeahead-input"
+            :class="['form-control', 'typeahead-input', errors.length > 0 && (!isClean || submitted) ? 'is-invalid' : errors.length == 0 && (!isClean || submitted) ? 'is-valid' : '']"
             :id="inputId"
-            :placeholder="placeholder"
+            :name="inputId"
+            :placeholder="loading ? 'Loading...': placeholder"
             :value="value"
             :disabled="disabled"
             @input="isClean = false; $emit('input', $event.target.value);"
-            @focus="isFocused = true"
+            @focus="isFocused = true; $emit('focus');"
             @keydown.down.prevent="optionChange('down')"
             @keydown.esc="removeFocus"
+            @keydown.enter="matches.length < 10 && matches.length > 0 ? handleClick(matches[0]) : null"
             autocomplete="off"
-            @blur="isFocused = false"
+            @blur="isFocused = false;  $emit('blur'); matches.length < 10 && matches.length > 0 ? handleClick(matches[0]) : null"
         >
         <div class="typeahead-options" tabindex="0" v-show="isFocused">
             <div class="typeahead-options--item" v-if="noMatch">No matching results found.</div>
             <div
                 class="typeahead-options--item"
                 v-for="(match,index) in matches"
-                :key="index"
-                :id="'typeaheadOption'+index"
+                :key="inputId+index"
+                :id="'typeaheadOption'+inputId+index"
                 v-show="value.length > 0 && matches.length > 0"
                 tabindex="0"
                 @mousedown.prevent
@@ -95,7 +97,11 @@ export default {
             type: Boolean,
             default: false
         },
-        options: Array
+        options: Array,
+        loading: {
+            type: Boolean,
+            default: false
+        }
     },
     methods: {
         removeFocus() {
@@ -110,7 +116,9 @@ export default {
                             this.selectedIndex--;
                             document
                                 .getElementById(
-                                    "typeaheadOption" + this.selectedIndex
+                                    "typeaheadOption" +
+                                        this.inputId +
+                                        this.selectedIndex
                                 )
                                 .focus();
                         } else if (this.selectedIndex == 0) {
@@ -126,7 +134,9 @@ export default {
                             this.selectedIndex++;
                             document
                                 .getElementById(
-                                    "typeaheadOption" + this.selectedIndex
+                                    "typeaheadOption" +
+                                        this.inputId +
+                                        this.selectedIndex
                                 )
                                 .focus();
                         } else {
@@ -141,6 +151,7 @@ export default {
         },
         handleClick(option) {
             this.$emit("input", option);
+            this.$emit("optionSelected", option);
             this.isHit = true;
             this.isFocused = false;
         },
@@ -171,6 +182,12 @@ export default {
         }
     },
     mounted() {
+        // If there's a value on mount, it means it was already valid from before. Reinput that.
+        if (this.value) {
+            this.isHit = true;
+            this.isClean = false;
+            this.$emit("optionSelected", this.matches[0]);
+        }
         // on mount emit an error event to populate the error list and trigger errors for any values that are current required
         this.$emit("error", {
             id: this.inputId,
@@ -188,9 +205,22 @@ export default {
             return this.isHit && this.value;
         },
         matches() {
-            return this.options.filter(
-                option =>
-                    option.toLowerCase().indexOf(this.value.toLowerCase()) != -1
+            const getIndexOfValue = str =>
+                str.toLowerCase().indexOf(this.value.toLowerCase());
+
+            return (
+                this.options
+                    // Filter to show matches against the current value
+                    .filter(option => getIndexOfValue(option) != -1)
+                    // Sort the list so matches closest to the start of the string are at the top
+                    .sort((nextItem, currentItem) => {
+                        return (
+                            getIndexOfValue(nextItem) -
+                            getIndexOfValue(currentItem)
+                        );
+                    })
+                    // Only show the top fifteen results
+                    .slice(0, 14)
             );
         },
         noMatch() {
@@ -214,27 +244,24 @@ export default {
 
             /* Check the array of validations and check the field value against each one. To add a new rule simple put it in the array in the parent component and then add a case for it and put the logic in the case. The array needs the rule type (string), rule value (depends on the rule), and a rule error message (string). Check the rule value against the field value, if it's an error return the rule message.*/
             const validationErrors = this.validation
-                .filter(rule => {
-                    switch (rule.type) {
+                .filter(({ type, value, msg }) => {
+                    switch (type) {
                         case "min":
                             if (
-                                this.value.length < rule.value &&
+                                this.value.length < value &&
                                 this.value.length > 0
                             ) {
-                                return rule.msg;
+                                return msg;
                             }
                             break;
                         case "max":
-                            if (
-                                this.value.length > rule.value &&
-                                !this.isClean
-                            ) {
-                                return rule.msg;
+                            if (this.value.length > value && !this.isClean) {
+                                return msg;
                             }
                             break;
                         case "match":
-                            if (this.value != rule.value) {
-                                return rule.msg;
+                            if (this.value != value) {
+                                return msg;
                             }
                             break;
                         default:

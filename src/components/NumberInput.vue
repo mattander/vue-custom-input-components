@@ -16,6 +16,7 @@
             :id="inputId"
             :placeholder="placeholder"
             :value="value"
+			min="1"
             @input="isClean = false; $emit('input', $event.target.value)"
             :disabled="disabled"
         >
