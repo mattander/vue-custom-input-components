@@ -99,7 +99,7 @@
                 :name="inputId+'hour'"
                 :id="inputId+'hour'"
                 :disabled="!value"
-                @input="parseDate($event.target.value,'hour')"
+                @change="parseDate($event.target.value,'hour')"
                 :value="dateFields.hour"
             >
                 <option value>-</option>
@@ -130,7 +130,7 @@
                 :name="inputId+'minute'"
                 :id="inputId+'minute'"
                 :disabled="!value"
-                @input="parseDate($event.target.value,'minute')"
+                @change="parseDate($event.target.value,'minute')"
                 :value="dateFields.minute"
             >
                 <option value>-</option>
@@ -162,7 +162,7 @@
                 :name="inputId+'timeofday'"
                 :id="inputId+'timeofday'"
                 :disabled="!value"
-                @input="parseDate($event.target.value,'timeofday')"
+                @change="parseDate($event.target.value,'timeofday')"
                 :value="dateFields.timeOfDay"
             >
                 <option value>-</option>
