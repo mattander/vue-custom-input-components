@@ -175,7 +175,7 @@
 
 <script>
 import dayjs from "dayjs";
-import Calendar from "@/components/inputs/Calendar.js";
+import Calendar from "@/components/Calendar.js";
 
 export default {
     name: "dateTimeInput",
@@ -242,18 +242,6 @@ export default {
         };
     },
     computed: {
-        // popupTop() {
-        //     let enoughSpace = false;
-        //     if (this.inputFocus) {
-        //         enoughSpace =
-        //             document
-        //                 .querySelector(`#${this.inputId}`)
-        //                 .getBoundingClientRect().top > 398
-        //                 ? true
-        //                 : false;
-        //     }
-        //     return enoughSpace;
-        // },
         dateFields() {
             return {
                 date: this.value
@@ -364,6 +352,7 @@ export default {
             this.pickerHover ? null : (this.inputFocus = false);
         },
         parseDate(val, type) {
+            console.log("parseDate", val, type);
             switch (type) {
                 case "date": {
                     if (String(dayjs(val)) == "Invalid date") {
