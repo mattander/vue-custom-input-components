@@ -18,13 +18,15 @@
                         <h4>Pick a date</h4>
                         <button @click.prevent="inputFocus = false" class="calendar-close">Close</button>
                     </div>
-                    <fieldset class="form-inline date-picker__monthyear">
-                        <div class="form-row justify-content-center align-items-center">
+                    <fieldset class="date-picker__monthyear">
+                        <div class="picker-row">
                             <button
                                 @click.prevent="datepickerparams.month--"
                                 class="btn-change-month prev"
-                            >&larr;</button>
-                            <div class="form-group col-auto">
+                            >
+                                <font-awesome-icon icon="arrow-left" />
+                            </button>
+                            <div class="form-group">
                                 <select
                                     name="months"
                                     class="date-picker__month form-control"
@@ -38,7 +40,7 @@
                                     >{{dayjs().month(n-1).format('MMMM')}}</option>
                                 </select>
                             </div>
-                            <div class="form-group col-auto">
+                            <div class="form-group">
                                 <select
                                     name="year"
                                     class="date-picker__year form-control"
@@ -55,7 +57,9 @@
                             <button
                                 @click.prevent="datepickerparams.month++"
                                 class="btn-change-month next"
-                            >&rarr;</button>
+                            >
+                                <font-awesome-icon icon="arrow-right" />
+                            </button>
                         </div>
                     </fieldset>
                     <Calendar
@@ -64,7 +68,10 @@
                         :month="datepickerparams.month"
                         :year="datepickerparams.year"
                         :today="today"
+                        :startDate="startDate"
+                        :hovered="hoveredDay"
                         @date-change="parseDate($event, 'date');"
+                        @dayHover="hoveredDay = $event"
                     />
                 </div>
             </div>
@@ -79,7 +86,7 @@
                 @blur.self="isClean = false; $emit('blur'); hidePicker($event)"
                 @focus="$emit('focus'); inputFocus = true;"
                 :disabled="disabled"
-            >
+            />
             <div class="invalid-feedback" v-if="errors.length > 0 && (!isClean || submitted)">
                 <div v-for="(error, index) in errors" :key="index">{{error}}</div>
             </div>
@@ -175,7 +182,7 @@
 
 <script>
 import dayjs from "dayjs";
-import Calendar from "@/components/Calendar.js";
+import Calendar from "@/components/inputs/Calendar.js";
 
 export default {
     name: "dateTimeInput",
@@ -210,9 +217,6 @@ export default {
             }
         },
         helpText: String,
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
@@ -220,6 +224,10 @@ export default {
         value: [Object, String],
         disabled: {
             type: Boolean,
+            default: false
+        },
+        startDate: {
+            type: [Object, String, Boolean],
             default: false
         }
     },
@@ -238,7 +246,8 @@ export default {
                 month: dayjs().month(),
                 year: dayjs().year()
             },
-            pickerHover: false
+            pickerHover: false,
+            hoveredDay: ""
         };
     },
     computed: {
@@ -257,14 +266,15 @@ export default {
             };
         },
         datepicker() {
+            let dateObj = new Date(
+                this.datepickerparams.year,
+                this.datepickerparams.month,
+                this.datepickerparams.selectedDay
+            );
             let datepickerobj = {
-                daysInPickerMonth: dayjs(
-                    this.datepickerparams.dateObj
-                ).daysInMonth(),
+                daysInPickerMonth: dayjs(dateObj).daysInMonth(),
                 weeksInPickerMonth:
-                    Math.floor(
-                        dayjs(this.datepickerparams.dateObj).daysInMonth() / 7
-                    ) + 1,
+                    Math.floor(dayjs(dateObj).daysInMonth() / 7) + 1,
                 firstDayIndex: dayjs(
                     new Date(
                         this.datepickerparams.year,
@@ -333,18 +343,21 @@ export default {
 
             const errors = [...reqErrors, ...validationErrors];
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
             return errors;
-        }
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
+        },
+        hasError() {
+            return this.errors.length > 0;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
         }
     },
     methods: {
@@ -352,16 +365,14 @@ export default {
             this.pickerHover ? null : (this.inputFocus = false);
         },
         parseDate(val, type) {
-            console.log("parseDate", val, type);
             switch (type) {
                 case "date": {
-                    if (String(dayjs(val)) == "Invalid date") {
+                    if (String(dayjs(val)).toLowerCase() == "invalid date") {
                         this.invalidDate = true;
                         break;
                     }
 
-                    if (String(dayjs(val)) !== "Invalid date") {
-                        console.log("value: ", this.value, "val: ", val);
+                    if (String(dayjs(val)).toLowerCase() !== "invalid date") {
                         const currentDate = this.value
                             ? dayjs(this.value)
                             : dayjs(val, [
@@ -407,12 +418,6 @@ export default {
                     if (val == 12 && this.dateFields.timeOfDay == "PM")
                         hour = 12;
 
-                    console.log(
-                        "time ",
-                        dayjs(this.value)
-                            .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
                     this.$emit(
                         "input",
                         dayjs(this.value)
@@ -422,12 +427,6 @@ export default {
                     break;
                 }
                 case "minute": {
-                    console.log(
-                        "time minute ",
-                        dayjs(this.value)
-                            .minute(val)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
                     this.$emit(
                         "input",
                         dayjs(this.value)
@@ -444,13 +443,6 @@ export default {
                     if (val == "AM" && currentHour == 12) hour = 0;
                     if (val == "PM" && currentHour == 12) hour = 12;
 
-                    console.log(
-                        "timeofday ",
-                        dayjs(this.value)
-                            .hour(hour)
-                            .format("YYYY-MM-DD HH:mm:ss")
-                    );
-
                     this.$emit(
                         "input",
                         dayjs(this.value)
@@ -465,7 +457,7 @@ export default {
             }
         }
     },
-    mounted() {
+    beforeMount() {
         // set the picker info to either the values in the field or, if it's empty, the values of today
         let values = {
             selectedDay: this.value ? dayjs(this.value).date() : dayjs().date(),
@@ -480,11 +472,14 @@ export default {
         );
 
         this.datepickerparams = values;
-        // on mount emit an input event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) this.isClean = false;
     }
 };
 </script>
@@ -510,6 +505,17 @@ export default {
     height: 0;
     width: 0;
     z-index: 990;
+}
+
+.picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 300px;
+
+    .form-group {
+        margin: 0 2px;
+    }
 }
 
 .calendar-wrapper {
@@ -599,16 +605,8 @@ export default {
     background-color: #fff;
     -webkit-appearance: none;
     border: none;
-    font-size: 20px;
+    font-size: 16px;
     color: rgb(52, 52, 52);
-
-    &.prev {
-        margin-right: 0.5rem;
-    }
-
-    &.next {
-        margin-left: 0.5rem;
-    }
 }
 
 .date-picker__calendar-container {
@@ -645,6 +643,23 @@ export default {
 
         .today {
             font-weight: bold;
+        }
+
+        &.start-day {
+            border-radius: 25px 0 0 25px;
+            background: rgba(0, 128, 0, 0.605);
+
+            &.endspan {
+                border-radius: 25px;
+            }
+        }
+
+        &.endspan {
+            border-radius: 0 25px 25px 0;
+        }
+
+        &.timespan {
+            background: rgba(0, 128, 0, 0.605);
         }
 
         &.past {
