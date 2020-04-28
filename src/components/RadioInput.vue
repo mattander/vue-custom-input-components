@@ -1,6 +1,6 @@
 <template>
     <div
-        :class="[wrapperClasses, errors.length > 0  && (!isClean || submitted) ? 'form-group--error' : '']"
+        :class="[wrapperClasses, errors.length > 0  && ((!isClean || submitted) && isRequired) ? 'form-group--error' : '']"
     >
         <div
             :class="[inline ? 'form-check-inline' : '', 'form-check']"
@@ -12,28 +12,37 @@
                 :class="[labelClasses ? labelClasses : null, 'form-check-label']"
                 v-if="!labelAfter && !srOnly"
             >
-                {{option.labelText}}
-                <span class="text-muted" v-if="isRequired == false">(optional)</span>
+                {{option.text}}
+                <span
+                    class="text-muted"
+                    v-if="!isRequired && !optionalFlag == false"
+                >(optional)</span>
             </label>
             <input
                 type="radio"
-                class="form-check-input"
+                :class="['form-check-input', errors.length > 0 && ((!isClean || submitted) && isRequired) ? 'is-invalid' : errors.length == 0 && ((!isClean || submitted) && isRequired) ? '' : '']"
                 :name="name"
                 :id="inputId + (index+1)"
                 :checked="option.value == value"
                 @change="isClean = false; $emit('input', option.value)"
                 :disabled="option.disabled"
-            >
+            />
             <label
                 :for="inputId + (index+1)"
                 :class="[labelClasses ? labelClasses : null, 'form-check-label']"
                 v-if="labelAfter && !srOnly"
             >
-                {{option.labelText}}
-                <span class="text-muted" v-if="isRequired == false">(optional)</span>
+                {{option.text}}
+                <span
+                    class="text-muted"
+                    v-if="!isRequired && !optionalFlag == false"
+                >(optional)</span>
             </label>
         </div>
-        <div class="invalid-feedback d-block" v-if="errors.length > 0 && (!isClean || submitted)">
+        <div
+            class="invalid-feedback d-block"
+            v-if="errors.length > 0 && ((!isClean || submitted) && isRequired)"
+        >
             <div v-for="(error, index) in errors" :key="index">{{error}}</div>
         </div>
         <small class="form-text text-muted d-block" v-else-if="helpText">{{helpText}}</small>
@@ -67,9 +76,6 @@ export default {
             type: Boolean,
             default: true
         },
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
@@ -85,6 +91,10 @@ export default {
             type: Boolean,
             default: false
         },
+        optionalFlag: {
+            type: Boolean,
+            default: true
+        },
         name: String,
         options: Array
     },
@@ -92,19 +102,6 @@ export default {
         return {
             isClean: true
         };
-    },
-    mounted() {
-        // on mount emit an input event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
-        }
     },
     computed: {
         errors() {
@@ -115,14 +112,33 @@ export default {
                 errors.push("This field is required");
             }
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
 
             return errors;
+        },
+        hasError() {
+            return this.errors.length > 0;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
         }
+    },
+    beforeMount() {
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) this.isClean = false;
     }
 };
 </script>

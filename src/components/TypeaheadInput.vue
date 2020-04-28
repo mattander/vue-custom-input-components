@@ -12,6 +12,7 @@
         </label>
         <input
             type="text"
+            ref="rootInput"
             :class="['form-control', 'typeahead-input', errors.length > 0 && (!isClean || submitted) ? 'is-invalid' : errors.length == 0 && (!isClean || submitted) ? 'is-valid' : '']"
             :id="inputId"
             :name="inputId"
@@ -19,13 +20,14 @@
             :value="value"
             :disabled="disabled"
             @input="isClean = false; $emit('input', $event.target.value);"
+            @change="$emit('changed')"
             @focus="isFocused = true; $emit('focus');"
             @keydown.down.prevent="optionChange('down')"
             @keydown.esc="removeFocus"
             @keydown.enter="matches.length < 10 && matches.length > 0 ? handleClick(matches[0]) : null"
             autocomplete="off"
-            @blur="isFocused = false;  $emit('blur'); matches.length < 10 && matches.length > 0 ? handleClick(matches[0]) : null"
-        >
+            @blur="isFocused = false;  $emit('blur'); matches.length == 1 ? handleClick(matches[0]) : null"
+        />
         <div class="typeahead-options" tabindex="0" v-show="isFocused">
             <div class="typeahead-options--item" v-if="noMatch">No matching results found.</div>
             <div
@@ -85,9 +87,6 @@ export default {
             }
         },
         helpText: String,
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
@@ -106,7 +105,7 @@ export default {
     methods: {
         removeFocus() {
             this.isFocused = false;
-            document.getElementsByTagName("body")[0].focus();
+            this.$refs.rootInput.blur();
         },
         optionChange(dir) {
             if (this.matches.length > 0) {
@@ -154,6 +153,7 @@ export default {
             this.$emit("optionSelected", option);
             this.isHit = true;
             this.isFocused = false;
+            if (this.$refs.rootInput) this.$refs.rootInput.blur();
         },
         boldMatch(string, query) {
             // Bold any matching character, regarldess of case, but maintain the case of the original char
@@ -179,25 +179,6 @@ export default {
                 });
             }
             return newString;
-        }
-    },
-    mounted() {
-        // If there's a value on mount, it means it was already valid from before. Reinput that.
-        if (this.value) {
-            this.isHit = true;
-            this.isClean = false;
-            this.$emit("optionSelected", this.matches[0]);
-        }
-        // on mount emit an error event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
         }
     },
     computed: {
@@ -243,7 +224,7 @@ export default {
             }
 
             /* Check the array of validations and check the field value against each one. To add a new rule simple put it in the array in the parent component and then add a case for it and put the logic in the case. The array needs the rule type (string), rule value (depends on the rule), and a rule error message (string). Check the rule value against the field value, if it's an error return the rule message.*/
-            const validationErrors = this.validation
+            let validationErrors = this.validation
                 .filter(({ type, value, msg }) => {
                     switch (type) {
                         case "min":
@@ -270,14 +251,41 @@ export default {
                 })
                 .map(item => item.msg);
 
+            if (this.isRequired && this.value.length > 0 && !this.options.includes(this.value)) {
+                validationErrors.push(
+                    "This option wasn't found in the list. Please enter a valid option."
+                );
+            }
             const errors = [...reqErrors, ...validationErrors];
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
             return errors;
+        },
+        hasError() {
+            return this.errors.length > 0;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
+        }
+    },
+    beforeMount() {
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) {
+            this.handleClick(this.value);
+            this.isClean = false;
         }
     }
 };
@@ -311,7 +319,7 @@ export default {
     width: 98%;
     background-color: #fff;
     margin-bottom: 2rem;
-    z-index: 98;
+    z-index: 999;
 
     .typeahead-options--item {
         width: 100%;

@@ -5,11 +5,14 @@
         <div :class="[inline ? 'form-check-inline' : '', 'form-check']">
             <label
                 :for="inputId"
-                :class="[labelClasses ? labelClasses : null, 'form-check-label']"
+                :class="[labelClasses ? labelClasses : null, 'form-check-label','mr-2']"
                 v-if="!labelAfter && !srOnly"
             >
                 {{labelText}}
-                <span class="text-muted" v-if="isRequired == false">(optional)</span>
+                <span
+                    class="text-muted"
+                    v-if="isRequired == false && optionalFlag"
+                >(optional)</span>
             </label>
             <input
                 type="checkbox"
@@ -19,14 +22,17 @@
                 :checked="value"
                 @change="isClean = false; $emit('input', $event.target.checked)"
                 :disabled="disabled"
-            >
+            />
             <label
                 :for="inputId"
                 :class="[labelClasses ? labelClasses : null, 'form-check-label']"
                 v-if="labelAfter && !srOnly"
             >
                 {{labelText}}
-                <span class="text-muted" v-if="isRequired == false">(optional)</span>
+                <span
+                    class="text-muted"
+                    v-if="isRequired == false && optionalFlag"
+                >(optional)</span>
             </label>
         </div>
         <div class="invalid-feedback d-block" v-if="errors.length > 0 && (!isClean || submitted)">
@@ -64,9 +70,6 @@ export default {
             type: Boolean,
             default: true
         },
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
@@ -81,6 +84,14 @@ export default {
         disabled: {
             type: Boolean,
             default: false
+        },
+        customError: {
+            type: String,
+            default: ""
+        },
+        optionalFlag: {
+            type: Boolean,
+            default: true
         }
     },
     data() {
@@ -88,36 +99,44 @@ export default {
             isClean: true
         };
     },
-    mounted() {
-        // on mount emit an input event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
-        }
-    },
     computed: {
         errors() {
             var errors = [];
 
             // Required and empty - error
             if (this.isRequired && this.value == "") {
-                errors.push("This field is required");
+                this.customError
+                    ? errors.push(this.customError)
+                    : errors.push("This field is required");
             }
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
 
             return errors;
+        },
+        hasError() {
+            return this.errors.length > 0;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
         }
+    },
+    beforeMount() {
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) this.isClean = false;
     }
 };
 </script>

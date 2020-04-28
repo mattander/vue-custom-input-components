@@ -11,7 +11,7 @@
             <span class="text-muted" v-if="!isRequired && !hideOptional">(optional)</span>
         </label>
         <select
-            class="form-control"
+            :class="['form-control', errors.length > 0 && (!isClean || submitted) ? 'is-invalid' : errors.length == 0 && (!isClean || submitted) ? 'is-valid' : '']"
             :id="inputId"
             :value="value"
             @change="isClean = false; $emit('input', $event.target.value)"
@@ -55,9 +55,6 @@ export default {
             }
         },
         helpText: String,
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
@@ -77,19 +74,6 @@ export default {
         return {
             isClean: true
         };
-    },
-    mounted() {
-        // on mount emit an input event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
-        }
     },
     computed: {
         errors() {
@@ -118,13 +102,32 @@ export default {
 
             const errors = [...reqErrors, ...validationErrors];
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
             return errors;
+        },
+        hasError() {
+            return this.errors.length > 0;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
         }
+    },
+    beforeMount() {
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) this.isClean = false;
     }
 };
 </script>

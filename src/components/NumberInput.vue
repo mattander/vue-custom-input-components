@@ -12,14 +12,14 @@
         </label>
         <input
             type="number"
-            class="form-control"
+            :class="['form-control', errors.length > 0 && (!isClean || submitted) ? 'is-invalid' : errors.length == 0 && (!isClean || submitted) ? 'is-valid' : '']"
             :id="inputId"
             :placeholder="placeholder"
             :value="value"
-			min="1"
-            @input="isClean = false; $emit('input', $event.target.value)"
+            min="0"
+            @input="handleInput($event)"
             :disabled="disabled"
-        >
+        />
         <div class="invalid-feedback" v-if="errors.length > 0 && (!isClean || submitted)">
             <div v-for="(error, index) in errors" :key="index">{{error}}</div>
         </div>
@@ -34,7 +34,7 @@ export default {
         wrapperClasses: {
             type: Array,
             default: () => {
-                return ["col-auto"];
+                return ["col-12 col-sm-6 col-md-4"];
             }
         },
         labelClasses: Array,
@@ -51,14 +51,11 @@ export default {
             }
         },
         helpText: String,
-        submitted: {
-            default: false
-        },
         srOnly: {
             type: Boolean,
             default: false
         },
-        value: String,
+        value: [String, Number],
         disabled: {
             type: Boolean,
             default: false
@@ -69,17 +66,11 @@ export default {
             isClean: true
         };
     },
-    mounted() {
-        // on mount emit an input event to populate the error list and trigger errors for any values that are current required
-        this.$emit("error", {
-            id: this.inputId,
-            error: this.isRequired
-        });
-    },
-    watch: {
-        isRequired() {
-            this.value.length == 0 ? (this.isClean = true) : null;
-            this.$emit("clean");
+    methods: {
+        handleInput(e) {
+            this.isClean = false;
+            const val = Number(String(e.target.value).replace(/-/gi, ""));
+            this.$emit("input", val);
         }
     },
     computed: {
@@ -122,13 +113,29 @@ export default {
 
             const errors = [...reqErrors, ...validationErrors];
 
-            if (errors.length > 0) {
-                this.$emit("error", { id: this.inputId, error: true });
-            } else {
-                this.$emit("error", { id: this.inputId, error: false });
-            }
+            // Unnecessary after input refactor, uncomment if you want errors emitted
+            // if (errors.length > 0) {
+            //     this.$emit("error", { id: this.inputId, error: true });
+            // } else {
+            //     this.$emit("error", { id: this.inputId, error: false });
+            // }
             return errors;
+        },
+        submitted() {
+            return (
+                this.$parent.submitted || this.$parent.cardSubmitted || false
+            );
         }
+    },
+    beforeMount() {
+        // Unnecessary after input refactor, uncomment if you want errors emitted
+        // this.$emit("error", {
+        //     id: this.inputId,
+        //     error: this.isRequired
+        // });
+
+        // If there's a value on mount, it means the field was filled previously so mark it as dirty
+        if (this.value) this.isClean = false;
     }
 };
 </script>
